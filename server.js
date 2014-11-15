@@ -17,7 +17,7 @@ function send404(response) {
 function sendFile(response, filePath, fileContents) {
 	response.writeHead(
 		200, 
-		{'content-type': mime.lookup(path.basename(filepath))}
+		{'content-type': mime.lookup(path.basename(filePath))}
 	);
 	response.end(fileContents);
 }
@@ -27,27 +27,29 @@ function serveStatic(response, cache, absPath) {
 		sendFile(response, absPath, cache[absPath])
 	} else {
 		fs.exists(absPath, function(exists) { // Check if file exists
-			fs.readFile(absPath, function(err, data) { // Read file from disk
-				if (err) {
-					send404(response);
-				} else {
-					cache[absPath] = data;
-					sendFile(response, absPath, data);
-				}
-			});
-		}) else {
-			send404(response);
-		}
+			if (exists) {
+				fs.readFile(absPath, function(err, data) { // Read file from disk
+					if (err) {
+						send404(response);
+					} else {
+						cache[absPath] = data;
+						sendFile(response, absPath, data);
+					}
+				});
+			} else {
+				send404(response);
+			}
+		});
 	}
 }
 
 var server = http.createServer(function(req, res) {
 	var filePath = false;
 	
-	if (request.url == '/') {
+	if (req.url == '/') {
 		filePath = 'public/index.html';
 	} else {
-		filePath = 'public' + request.url;
+		filePath = 'public' + req.url;
 	}
 		
 	var absPath = './' + filePath;
